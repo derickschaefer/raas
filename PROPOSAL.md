@@ -126,45 +126,10 @@ This leads to a simple engineering principle:
 
 Repository Architecture does not seek to eliminate reasoning. Rather, it seeks to preserve reasoning for the problems that genuinely require it. By progressively reducing uncertainty before execution, autonomous consumers can devote computational effort to solving new problems instead of repeatedly rediscovering stable characteristics of the software system.
 
-```
-Progressive Reduction of Uncertainty
--------------------------------------
-        Highest Uncertainty
-                |
-                v
-+-----------------------------------+
-|              Context              |
-+-----------------------------------+
-                  |
-                  v
-    +---------------------------+
-    |          Intent           |
-    +---------------------------+
-                 |
-                 v
- +---------------------------------+
- |     Deterministic Knowledge     |
- +---------------------------------+
-                 |
-                 v
-    +----------------------------+
-    |     Workflow Knowledge     |
-    +----------------------------+
-                 |
-                 v
-       +----------------------+
-       |   Lowest Uncertainty |
-       +----------------------+
-                 |
-                 v
-       +------------------+
-       |     Reasoning    |
-       +------------------+
-                 |
-                 v
-        Execution / Action
+![Reduce Uncertainty](images/reduce-uncertainty.png)
+
 Uncertainty is continuously reduced at every stage.
-```
+
 
 ### Context
 
@@ -269,38 +234,7 @@ Likewise, rather than executing the complete workflow multiple times for related
 
 workflow knowledge may identify an equivalent but more efficient execution strategy:
 
-```
-+---------------------------+
-|      Search -> Select      |
-+---------------------------+
-              |
-              v
-+--------------------------------------------------------+
-|  Retrieve (Series 1, Series 2, Series 3, ...) [Concurrent] |
-+--------------------------------------------------------+
-     |          |          |          |          |
-     v          v          v          v          v
-+--------+ +--------+ +--------+ +--------+ +--------+
-|Series 1| |Series 2| |Series 3| |  ...   | |Series N|
-+--------+ +--------+ +--------+ +--------+ +--------+
-     |          |          |          |          |
-     +----------+----------+----------+----------+
-                           |
-                           v
-                  +--------------------+
-                  |      Transform      |
-                  +--------------------+
-                           |
-                           v
-                  +--------------------+
-                  |       Analyze        |
-                  +--------------------+
-                           |
-                           v
-                  +--------------------+
-                  |        Export        |
-                  +--------------------+
-```
+![Efficient Workflow](images/efficient-workflow.png)
 
 Both workflows produce identical deterministic results, yet the latter reduces redundant operations and exposes opportunities for parallel execution.
 
@@ -565,9 +499,14 @@ The first call is `reserve onboard --topic toc`. This establishes Context and In
 
 Guided by the `toc` response's own `quick_start` field, the consumer's task—comparing two series over a fixed historical window—points it toward the `pipeline` topic rather than a blind read of all eight. That single request now resolves the Workflow Knowledge this task requires before any command is issued: the `critical_rule` states plainly that `obs get` defaults to table format even when piped, and that the downstream operator will fail with `invalid character +` if `--format jsonl` is omitted—the same non-obvious dependency this paper introduced illustratively in Workflow Knowledge, here documented as a fact about a real tool rather than a hypothetical. The same response's `high_value_batch_rule` and `batched_summary_pattern` fields go further, supplying the exact command for this class of task:
 
-```
-reserve obs get FEDFUNDS DRCCLACBS T10Y2Y UNRATE --start 2008-01-01 --end 2008-12-31 --format jsonl \
-  | reserve analyze summary --by-series
+```bash
+reserve obs get \
+  FEDFUNDS DRCCLACBS T10Y2Y UNRATE \
+  --start 2008-01-01 \
+  --end 2008-12-31 \
+  --format jsonl \
+| reserve analyze summary \
+    --by-series
 ```
 
 This is worth pausing on: the identical pattern appears independently in both the `pipeline` topic and the `analyze` command's own examples in the `commands` topic. Two separately generated onboarding documents agree on the same verified command, which is the kind of internal consistency Onboarding Publications and Workflow Contracts are supposed to jointly guarantee—a fact discoverable in one topic should not contradict the same fact discovered in another.
